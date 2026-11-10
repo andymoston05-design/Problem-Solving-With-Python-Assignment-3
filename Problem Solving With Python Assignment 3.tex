@@ -1,0 +1,304 @@
+\documentclass[11pt]{article}
+
+%####### DON'T CHANGE MARGIN SETTINGS ###########
+\newcommand{\keywordfont}{\textsc}
+\newcommand{\keyword}[1]{%
+  \marginpar{\raggedright\small\keywordfont{#1}}}
+\reversemarginpar
+\usepackage[a4paper, top=2.5cm, bottom=2.5cm, outer=2cm, inner=3.3cm, marginparwidth=72pt, heightrounded]{geometry}
+%#################################
+
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{amsthm}
+\usepackage{hyperref}
+\usepackage{graphicx}
+\usepackage{microtype}
+
+\newtheorem{claim}{Claim}
+\newtheorem{conjecture}{Conjecture}
+
+
+
+
+\begin{document}
+
+\Large
+\begin{center}
+\textbf{MA3K7-A1 Assignment $3$}
+\\
+Andy Moston (5650294)
+\end{center}
+\normalsize
+
+
+
+\section{Entry}
+\begin{itemize}
+\item We have $n$ initially \keyword{I Know} empty heaps and $s$ stones.
+\item In Phase 1, players alternate placing one stone into any of the $n$ heaps.
+\item In Phase 2, the resulting configuration has players remove any positive number of stones from one heap, and the player who removes the final stone loses.
+\item I assume Player 1 places the first stone in Phase 1.
+\item Inspired by Building Nim, I assume the player who did not place the final stone starts Phase 2. Therefore, the Phase 2 starter depends on the parity of $s$.
+\item I assume empty heaps are permitted, as the question does not require every heap to contain a stone.
+\end{itemize}
+
+I want to \keyword{What I Want} investigate how $n$ and $s$ affect the outcome of the game, initially considering random placement before investigating strategic play.
+
+I will separate the problem into two parts:
+
+\begin{enumerate}
+\item Investigate the heap configurations produced by Phase 1, and how these depend on $n$ and $s$.
+\item Establish which configurations are winning or losing in Phase 2, before investigating how players might strategically construct them in Phase 1.
+\end{enumerate}
+
+I also want to investigate how the Nim-sum behaves under the altered winning condition, and whether I can construct a strategy that guarantees a victory when possible.
+
+\begin{itemize}
+\item W-position: a position from which \keyword{Notation} the player whose turn it is can force a victory, assuming optimal play.
+\item L-position: a position from which the player whose turn it is cannot force a victory against an optimal opponent.
+\end{itemize}
+
+Importantly, an L-position does not mean that a player necessarily loses regardless of their opponent's mistakes, and vice versa for a W-position.
+
+\section{Attack}
+
+\subsection{Phase 1: Random placement}
+
+I initially want to understand what configurations are likely to arise, and some of their attributes, before considering strategic placement. Whilst this works for breaking down the problem, it is also because I need to investigate what configurations are optimal for play in Phase 2 to know what strategic play for Phase 1 looks like.
+
+I construct a Python function which takes $n$ and $s$ as inputs and randomly distributes the $s$ stones between the $n$ heaps.
+
+Each stone is independently assigned to a uniformly selected heap. Consequently, I do not need to explicitly simulate the players taking turns at this stage: their identities do not affect the distribution if neither is following a strategy.
+
+\keyword{Pause}
+I initially wondered whether ignoring the players' turns would affect the results. However, since every placement is independent and neither player is responding to the other's decisions, the resulting distribution is unchanged. I still need to account for whose turn it is when determining the Phase 2 starter.
+
+Since Player 1 starts Phase 1, the starter of Phase 2 is:
+
+\[
+\text{Starter}=
+\begin{cases}
+\text{Player } 1,&s\text{ even},\\
+\text{Player } 2,&s\text{ odd}
+\end{cases}
+\]
+
+I first investigate $(n=4,s=10)$, repeating the experiment several times.
+
+I then increased the number of simulations and took note of values such as the average size of the largest heap; the average number of empty heaps; the proportion of games in which every heap is occupied and repeat this for different values of $n$ and $s$.
+
+Rather than simply accepting \keyword{Maybe} the averages produced by my simulation, I want an independent mathematical result against which I can check them.
+
+For any particular heap, the probability of remaining empty after $s$ placements is:
+
+\[
+P(\text{empty})=\left(1-\frac{1}{n}\right)^s
+\]
+
+By linearity of expectation, the expected number of empty heaps is therefore:
+
+\[
+\mathbb{E}[E]=n\left(1-\frac{1}{n}\right)^s
+\]
+
+I compare this theoretical expectation with the average obtained through Python.
+
+
+The two values should be\keyword{Check} close, although some variation is expected because the simulation is finite.
+
+
+I initially treated empty heaps \keyword{Aha} as an unimportant consequence of random placement. However, I now realise that they could be strategically important. Empty heaps cannot affect Phase 2, meaning a configuration with $r$ empty heaps out of $n$ is effectively a game played on $n-r$ non-empty heaps. This also allows us to consider cases where $n>s$.
+
+If certain numbers of non-empty heaps are advantageous, a player might deliberately try to produce them.
+
+This gives me a reason to retain the number of empty heaps as a variable in my investigation.
+
+\subsection{Phase 2: Establishing winning and losing positions}
+
+Before considering strategic placement, I need to establish which configurations favour the player starting Phase 2.
+
+I initially tried applying the familiar Nim-sum result directly, but found that it did not always agree with simple examples.
+
+
+I initially \keyword{Stuck} suspected that the Nim-sum was only applicable to normal-play Nim, where the player taking the final stone wins. However, I realised that I needed to investigate the effect of the altered final move rather than discard the Nim-sum entirely. I break down the possible configurations into two cases to make them more approachable.
+
+\subsubsection{Case A: All heaps contain at most one stone}
+
+I first specialise to $n=s$, giving $n$ heaps containing exactly one stone each.
+
+Every move must remove exactly one stone from exactly one heap. Since taking the final stone loses, the outcome is determined entirely by parity.
+
+I therefore conjecture:
+
+\[
+\boxed{
+\begin{aligned}
+\text{Odd number of non-empty heaps}&\Rightarrow L,\\
+\text{Even number of non-empty heaps}&\Rightarrow W.
+\end{aligned}
+}
+\]
+
+This also applies when some heaps are empty, since empty heaps cannot be played on, further emphasising my earlier point that $n$ heaps with $r$ empty heaps plays identically to $n-r$ heaps.
+
+\subsubsection{Case B: At least one heap contains more than one stone}
+
+For a configuration $H=(h_1,\ldots,h_n)$, define:
+
+\[
+X=h_1\oplus h_2\oplus\cdots\oplus h_n.
+\]
+
+The Nim-sum is the bitwise XOR of the heap sizes.
+
+If $X=0$, every binary column contains an even number of ones. Any legal move changes one heap, changing the parity of at least one binary column. Therefore, the resulting Nim-sum cannot remain zero.
+
+Conversely, if $X\neq 0$, the usual Nim strategy allows a player to reduce a heap so that the resulting Nim-sum is zero.
+
+
+This is the familiar result \keyword{Pause} for normal-play Nim, but I cannot yet assume it holds here. The important difference is what happens when every remaining heap contains at most one stone.
+
+I therefore break the problem down and consider two possibilities.
+
+\paragraph{1. The Nim-sum is zero.}
+
+If at least one heap exceeds one, there must actually be at least two such heaps: a single heap larger than one cannot have a Nim-sum of zero.
+
+Any legal move therefore leaves at least one heap larger than one, as well as producing a non-zero Nim-sum.
+
+Thus, every legal move leaves the opponent in a position with a non-zero Nim-sum and at least one heap larger than one.
+
+\paragraph{2. The Nim-sum is non-zero.}
+
+If at least two heaps exceed one, I can use the usual Nim strategy to reduce the Nim-sum to zero, while leaving at least one other large heap.
+
+If only one heap exceeds one, I can instead reduce it to either zero or one. I choose whichever leaves an odd number of single-stone heaps, which is an L-position by Case A.
+
+I have therefore shown \keyword{Aha} that the usual Nim-sum classification still applies whenever at least one heap exceeds one! The exception occurs when all remaining heaps contain at most one stone, where parity takes over.
+
+My complete classification is:
+
+\begin{center}
+\begin{tabular}{|c|c|c|}
+    \hline
+    \textbf{Configuration} & \textbf{L-position} & \textbf{W-position}\\
+    \hline
+    All heaps contain 0 or 1 & Odd number of non-empty heaps & Even number of non-empty heaps\\
+    \hline
+    At least one heap exceeds 1 & $X=0$ & $X\neq 0$\\
+    \hline
+\end{tabular}
+\end{center}
+
+I can now use this classification to construct an optimal Phase 2 strategy.
+
+\subsubsection{Checking my classification independently}
+
+Rather than simply testing my mathematical function against a few manually calculated examples, I want an independent way of determining winning positions.
+
+I construct a recursive Python function which considers every possible legal move.
+
+If no stones remain, the previous player has lost, so the current player has already won.
+
+I then choose to use \texttt{itertools.product} to generate every configuration containing between one and four heaps, with each heap containing between zero and four stones.
+
+This gives:
+
+\[
+\sum_{n=1}^{4}5^n=780
+\]
+
+configurations.
+
+I compare the recursive function against my mathematical classification.
+
+I obtain 0 disagreements \keyword{Check} across 780 configurations.
+
+Agreement between these independent approaches provides computational evidence supporting my approach, although it does not constitute a proof for all possible heap sizes.
+
+\subsubsection{Constructing an optimal Phase 2 move}
+
+Having established how to classify positions, I now want to determine how a player should actually move.
+
+I construct \texttt{choose\_move}, which considers every possible legal move and returns one that leaves the opponent in an L-position.
+
+If no such move exists, the current position must be losing, and any legal move will do.
+
+I combine this with a game simulation which alternates between players, updates the heaps and declares the winner when the final stone is removed.
+
+I test the simulation against
+\keyword{Check} simple configurations, particularly those containing only single-stone heaps, to ensure that the player taking the final stone is correctly declared the loser.
+
+The simulation also allows me to observe the sequence of moves, rather than simply identifying the winner from the initial configuration. 
+
+\subsection{Re-entry: Investigating strategic Phase 1 placement}
+
+Having established how to play Phase 2 optimally, I can return to Phase 1.
+
+\keyword{Aha}
+Phase 1 is not simply about distributing stones: each player is attempting to construct a favourable Phase 2 configuration, whilst also determining who moves first in Phase 2.
+
+Random placement alone cannot tell me whether either player can deliberately force a victory. I therefore use recursive reasoning again.
+
+A player has a winning strategy if they can make at least one placement which leaves their opponent unable to force an overall victory. My Python function considers each possible heap for the next stone, evaluating the resulting position recursively. Once all stones have been placed, it uses my Phase 2 classification to determine the winner.
+
+\keyword{Try}
+I test small values of $n$ and $s$ first, recording which player can force an overall victory under optimal play. I then increase these values to look for patterns. The full results are included in my Python output.
+
+\keyword{Check}
+I trace particularly small games manually and check that the function preserves a winning position whenever one exists.
+
+\subsection{Solution: Combining the phases}
+
+I can now combine the two phases into a single model.
+
+For random placement, I use the generated configuration and determine the winner through my Phase 2 classification.
+
+For strategic placement, I use the recursive Phase 1 function to determine whether either player can force an overall victory.
+
+I compare the results for different values of $n$ and $s$, paying particular attention to:
+
+Whether the first player has an advantage in Phase 1; Whether the parity of $s$ affects which player starts Phase 2 ; Whether increasing $n$ produces more empty heaps and changes the resulting configurations ; Whether random placement and optimal placement produce substantially different outcomes.
+
+
+This allows me to distinguish between the probability of winning when heaps are constructed randomly and the existence of a strategy which guarantees victory.
+
+\section{Review}
+
+I have \keyword{Check} checked my mathematical classification against an independent recursive implementation, tested the individual functions against manually calculated examples, and compared the expected number of empty heaps against simulation results.
+
+I have also checked the complete game simulation to ensure that the player removing the final stone loses.
+
+
+One of the most \keyword{Reflect} important moments in this investigation was realising that the usual Nim-sum strategy could not simply be applied without considering the final few moves.
+
+By specialising to\keyword{Simplification}  configurations containing only single-stone heaps, I identified the exception and was able to establish a more complete classification.
+
+I also found that my initial random placement investigation, although useful, was insufficient to answer the strategic question. It helped me initially break down and approach the question, and encouraged me to revisit the problem and apply recursive reasoning to Phase 1 as well as Phase 2.
+
+\paragraph{1. Normal-play Nim}
+
+If the player \keyword{Extend} taking the final stone wins instead, the exceptional single-stone case disappears. I could therefore compare the results of the two versions and investigate how changing the final-move condition affects optimal Phase 1 placement.
+
+\paragraph{2. Changing the number of stones that can be placed}
+
+The current rules restrict Phase 1 to placing one stone per turn. Allowing players to place more than one stone would change the possible configurations and the strategic choices available.
+
+\paragraph{3. Changing the number of heaps}
+
+Increasing $n$ changes the number of possible configurations and the probability of empty heaps. I can investigate whether the advantage of either player changes as $n$ increases relative to $s$.
+
+\paragraph{4. Changing the Phase 2 starting player}
+
+My assumption that the player who did not place the final stone starts Phase 2 is not explicitly specified in the question. If instead the final placer starts Phase 2, the identity of the starter reverses. I could investigate whether this changes the optimal Phase 1 strategy.
+
+Overall, I have found that the two phases cannot be understood entirely independently: Phase 1 determines both the heap configuration and the player who must confront it first in Phase 2.
+
+
+\section{Code}
+The code for this assignment and the python code can be found on my GitHub page:\\  
+\url{https://github.com/andymoston05-design/Problem-Solving-with-Python-Assignment-2}
+
+
+\end{document}
